@@ -3,3 +3,9 @@ node_modules/
 .env.*
 !.env.example
 *.log
+
+# Local development and legacy practice assets: retained locally, never pushed
+todo-app.rest
+public/
+src/db.js
+Dockerfile
