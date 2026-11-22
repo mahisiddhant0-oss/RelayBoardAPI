@@ -1,8 +1,9 @@
 import express from 'express'
 import authRoutes from './routes/authRoutes.js'
-import todoRoutes from './routes/todoRoutes.js'
 import authMiddleware from './middleware/authMiddleware.js'
-
+import workspaceRoutes from './routes/workspaceRoutes.js'
+import projectRoutes from './routes/projectRoutes.js'
+import taskRoutes from './routes/taskRoutes.js'
 
 const app = express()
 const PORT = process.env.PORT || 5003
@@ -14,8 +15,19 @@ app.get('/health', (req, res) => {
 })
 
 app.use('/auth', authRoutes)
+app.use('/workspaces', authMiddleware, workspaceRoutes)
 
-app.use('/todos',authMiddleware , todoRoutes)
+app.use(
+  '/workspaces/:workspaceId/projects',
+  authMiddleware,
+  projectRoutes
+)
+
+app.use(
+  '/workspaces/:workspaceId/projects/:projectId/tasks',
+  authMiddleware,
+  taskRoutes
+)
 
 app.use((req, res) => {
     res.status(404).json({

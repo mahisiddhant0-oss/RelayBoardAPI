@@ -1,13 +1,14 @@
 # RelayBoard API
 
-RelayBoard API is a REST backend for authenticated task management. It is being developed as a portfolio project focused on API design, JWT authentication, PostgreSQL, Prisma, Docker, and secure resource ownership.
+RelayBoard API is a REST backend for collaborative task management. It models workspaces, projects, and project-scoped tasks while enforcing JWT authentication and workspace-role authorization.
 
 ## Current capabilities
 
 - Register and log in with hashed passwords and JWTs.
-- Validate registration, login, and task-creation input.
-- Create, list, update, and delete tasks for the authenticated user.
-- Enforce task ownership for updates and deletes.
+- Create workspaces and automatically register their creator as the `OWNER`.
+- Create and list projects inside a workspace; only `OWNER` and `ADMIN` roles can create projects.
+- Create, list, and update task status inside a project.
+- Reject requests for projects outside the caller's workspace.
 - Run PostgreSQL locally with Docker.
 
 ## Tech stack
@@ -30,10 +31,13 @@ The API runs at `http://localhost:2121` by default. Visit `GET /health` to confi
 | --- | --- | --- |
 | POST | `/auth/register` | Create an account and receive a JWT. |
 | POST | `/auth/login` | Log in and receive a JWT. |
-| GET | `/todos` | List the authenticated user's tasks. |
-| POST | `/todos` | Create a task. |
-| PUT | `/todos/:id` | Mark an owned task complete or incomplete. |
-| DELETE | `/todos/:id` | Delete an owned task. |
+| GET | `/workspaces` | List workspaces the authenticated user belongs to. |
+| POST | `/workspaces` | Create a workspace and assign its creator the `OWNER` role. |
+| GET | `/workspaces/:workspaceId/projects` | List projects in a workspace. |
+| POST | `/workspaces/:workspaceId/projects` | Create a project (`OWNER` or `ADMIN`). |
+| GET | `/workspaces/:workspaceId/projects/:projectId/tasks` | List a project's tasks. |
+| POST | `/workspaces/:workspaceId/projects/:projectId/tasks` | Create a task in a project. |
+| PATCH | `/workspaces/:workspaceId/projects/:projectId/tasks/:taskId/status` | Change a task to `TODO`, `IN_PROGRESS`, or `DONE`. |
 
 Protected endpoints require this header:
 

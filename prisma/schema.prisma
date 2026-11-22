@@ -13,19 +13,81 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-model User{
-  id  Int   @id @default(autoincrement())
-  username  String  @unique
-  password String
-  todos Todo[]
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
 }
 
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
 
-model Todo{
-  id  Int @id @default(autoincrement())
-  task String
-  completed Boolean @default(false)
-  userId Int
-  user User @relation(fields:  [userId],references : [id])
+model User {
+  id              Int               @id @default(autoincrement())
+  username        String            @unique
+  password        String
+  memberships     WorkspaceMember[]
+  ownedWorkspaces Workspace[]       @relation("WorkspaceOwner")
+  assignedTasks   Task[]            @relation("TaskAssignee")
+}
+
+model Workspace {
+  id        Int      @id @default(autoincrement())
+  name      String
+  ownerId   Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner    User              @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  members  WorkspaceMember[]
+  projects Project[]
+}
+
+model WorkspaceMember {
+  id          Int           @id @default(autoincrement())
+  userId      Int
+  workspaceId Int
+  role        WorkspaceRole @default(MEMBER)
+  createdAt   DateTime      @default(now())
+
+  user      User      @relation(fields: [userId], references: [id])
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@unique([userId, workspaceId])
+  @@index([workspaceId])
+}
+
+model Project {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  workspaceId Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  tasks     Task[]
+
+  @@index([workspaceId])
+}
+
+model Task {
+  id          Int        @id @default(autoincrement())
+  title       String
+  description String?
+  status      TaskStatus @default(TODO)
+  projectId   Int
+  assigneeId  Int?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  project  Project @relation(fields: [projectId], references: [id])
+  assignee User?   @relation("TaskAssignee", fields: [assigneeId], references: [id])
+
+  @@index([projectId])
+  @@index([assigneeId])
+  @@index([projectId, status])
 }
