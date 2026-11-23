@@ -67,7 +67,7 @@ router.post('/login',async(req,res)=>{
     }
 
     if(typeof password !=='string' || password === ''){
-        res.status(400).json({
+        return res.status(400).json({
             message : 'Password is required'
         })
     }

@@ -1,7 +1,6 @@
 services:
   db:
     image: postgres:13-alpine
-    container_name: relayboard-db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
