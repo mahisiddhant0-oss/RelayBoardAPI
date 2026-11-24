@@ -78,6 +78,21 @@ test('workspace roles restrict member management and task assignment to workspac
   const outsider = await register('outsider')
   const admin = await register('admin')
 
+  assert.equal((await request('/auth/login', 'POST', undefined, {
+    username: owner.username, password: 'incorrect-password'
+  })).status, 401)
+  const login = await request('/auth/login', 'POST', undefined, {
+    username: owner.username, password: 'test-password-123'
+  })
+  assert.equal(login.status, 200)
+  assert.equal(typeof login.body.token, 'string')
+  assert.equal((await request('/workspaces')).status, 401)
+  const malformedAuthorization = await fetch(`${baseUrl}/workspaces`, {
+    headers: { Authorization: `Bearer${login.body.token}` }
+  })
+  assert.equal(malformedAuthorization.status, 401)
+  assert.equal((await request('/workspaces', 'GET', 'not-a-jwt')).status, 401)
+
   const workspace = await request('/workspaces', 'POST', owner.token, { name: 'Permission test' })
   assert.equal(workspace.status, 201)
   ids.workspace = workspace.body.id
@@ -136,6 +151,17 @@ test('workspace roles restrict member management and task assignment to workspac
   assert.equal((await request(`${tasks}?status=INVALID`, 'GET', owner.token)).status, 400)
   assert.equal((await request(`${tasks}?status=DONE`, 'GET', owner.token)).body.length, 0)
   assert.equal((await request(`${tasks}?status=TODO`, 'GET', owner.token)).body.length, 1)
+
+  const statusChanged = await request(`${tasks}/${ids.task}/status`, 'PATCH', member.token, {
+    status: 'IN_PROGRESS'
+  })
+  assert.equal(statusChanged.status, 200)
+  assert.equal(statusChanged.body.status, 'IN_PROGRESS')
+  assert.equal((await request(`${tasks}?status=TODO`, 'GET', owner.token)).body.length, 0)
+  assert.equal((await request(`${tasks}?status=IN_PROGRESS`, 'GET', owner.token)).body.length, 1)
+  assert.equal((await request(`${tasks}/${ids.task}/status`, 'PATCH', member.token, {
+    status: 'INVALID'
+  })).status, 400)
 
   assert.equal((await request(assignee, 'PATCH', owner.token, {
     username: outsider.username

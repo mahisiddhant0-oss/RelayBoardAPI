@@ -116,6 +116,8 @@ Protected endpoints require this header:
 Authorization: Bearer <jwt>
 ```
 
+Use the token returned by registration or login in place of `<jwt>`; keep the space after `Bearer`.
+
 ## Tests
 
-With the local PostgreSQL container running and migrations applied, run `npm test`. The integration test creates temporary accounts and a workspace, checks role-based access, and cleans up its test data. GitHub Actions runs this suite against a fresh PostgreSQL service on every push and pull request.
+With the local PostgreSQL container running and migrations applied, run `npm test`. The integration test creates temporary accounts and workspaces, checks login, token formatting, role-based access, task status transitions, cross-workspace isolation, and cleans up its test data. GitHub Actions runs this suite against a fresh PostgreSQL service on every push and pull request. `GET /health` confirms the HTTP server is running; it does not check database connectivity.

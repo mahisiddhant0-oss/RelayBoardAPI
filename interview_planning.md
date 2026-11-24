@@ -21,7 +21,7 @@ This is a speaking guide for the **current implementation**. Use it to explain y
 | Decision | Why it exists | Where to show it |
 | --- | --- | --- |
 | Separate membership table with `OWNER`, `ADMIN`, `MEMBER` | Role belongs to a **user within a workspace**, not globally to the user. A unique `(userId, workspaceId)` pair prevents duplicate memberships. | `prisma/schema.prisma`, `src/middleware/requireWorkspaceRole.js` |
-| JWT plus password hashing | Passwords are stored as bcrypt hashes; login returns a signed token used on protected requests. A valid token identifies the caller, while membership checks decide what that caller can do. | `src/routes/authRoutes.js`, `src/middleware/authMiddleware.js` |
+| JWT plus password hashing | Passwords are stored as bcrypt hashes; login returns a signed token used on protected requests. Middleware requires a correctly formatted Bearer header and verifies the token, while membership checks decide what that caller can do. | `src/routes/authRoutes.js`, `src/middleware/authMiddleware.js` |
 | Project lookup scoped to workspace | An ID alone should not give access to a project from a different workspace. The lookup requires both the project ID and workspace ID. | `src/middleware/requireProjectInWorkspace.js` |
 | Assignment checks membership | A task cannot be assigned to a registered user who is outside its workspace. Removing a member clears their existing task assignments. | `src/routes/taskRoutes.js`, `src/routes/workspaceRoutes.js` |
 | Transactions for linked writes and deletes | Creating a workspace also creates its owner membership; removing a member updates assignments; deleting a project or workspace deletes child records together. A transaction prevents partial changes if one step fails. | `src/routes/workspaceRoutes.js`, `src/routes/projectRoutes.js` |
@@ -40,12 +40,12 @@ This is a speaking guide for the **current implementation**. Use it to explain y
 
 **What happens when a project or workspace is deleted?** The API explicitly deletes nested tasks before the parent records, within a transaction. Deleting a workspace also removes its projects and membership records. This is a destructive API operation and is restricted by role.
 
-**How did you test it?** `npm test` starts the Express app on an ephemeral port, sends HTTP requests to register users and exercise the role rules, verifies expected status codes and data, and cleans up its test records. Locally, PostgreSQL is started using Docker Compose and Prisma migrations are applied first. CI is configured to create a fresh PostgreSQL service and run the same suite; confirm the GitHub run before saying CI passed remotely.
+**How did you test it?** `npm test` starts the Express app on an ephemeral port, sends HTTP requests to exercise registration, login, token formatting, role rules, task status transitions, and cross-workspace isolation, then cleans up its test records. Locally, PostgreSQL is started using Docker Compose and Prisma migrations are applied first. GitHub Actions runs the same suite against a fresh PostgreSQL service on pushes and pull requests; cite the successful run for the commit you discuss.
 
 ## Honest scope and next talking points
 
 - **Implemented:** JWT login/registration, workspaces and membership roles, project and task CRUD, task status filtering and assignment, cross-workspace checks, PostgreSQL migrations, local integration tests, and a CI workflow file.
-- **Still to verify or polish:** run the CI workflow after pushing it, review the API end to end from a fresh clone, and decide whether a public deployment is useful for the resume. Do not claim production usage or performance improvements without measuring them.
+- **Release verification:** confirm the GitHub Actions run for the final commit. Run the setup from a fresh clone on a machine with Docker Desktop when available. A public deployment is optional and has not been made; do not claim production usage or performance improvements without measuring them.
 - **Resume framing after verification:** "Built a multi-workspace REST API with Node.js, Express, PostgreSQL, and Prisma; enforced JWT authentication and workspace-scoped role permissions; tested cross-workspace isolation with database-backed integration tests and CI."
 
 When a feature changes, update this narrative and `README.md` to describe the actual behavior. Add a new interview explanation for the decision behind the feature, not merely its endpoint name.

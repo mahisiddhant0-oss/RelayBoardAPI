@@ -1,14 +1,15 @@
 import jwt from 'jsonwebtoken'
 
 function authMiddleware (req,res,next){
-     const authHeader = req.headers.authorization
-    if(!authHeader || !authHeader.startsWith('Bearer')){
+    const authHeader = req.headers.authorization
+    const bearer = /^Bearer ([^\s]+)$/.exec(authHeader || '')
+    if (!bearer) {
         return res.status(401).json({
             message : 'Authorization token is required!'
         })
     }
 
-    const token = authHeader.slice(7)
+    const token = bearer[1]
 
     jwt.verify(token, process.env.JWT_SECRET ,(err,decoded)=> {
         if(err) { return res.status(401).json({message : "Invalid token"})}
